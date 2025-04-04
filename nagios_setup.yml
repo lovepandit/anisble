@@ -1,0 +1,38 @@
+---
+- name: Move and Configure File on Nagios Server
+  hosts: nagios  
+  become: true  
+  become_user: root  
+
+  tasks:
+#    - name: Copy the cfgFile from Ansible server to Nagios server
+#      copy:
+#        src: /tmp/{{ cfgFile }}
+#        dest: /tmp/{{ cfgFile }}
+#        owner: root
+#        group: root
+#        mode: '0644'
+
+    - name: Move the new file to the correct directory
+      command:
+        cmd: mv /tmp/{{ cfgFile }} /usr/local/nagios/etc/servers/
+      args:
+        creates: /usr/local/nagios/etc/servers/{{ cfgFile }}
+
+    - name: Change ownership of the new file to root
+      file:
+        path: /usr/local/nagios/etc/servers/{{ cfgFile }}
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Restart the Nagios service
+      command: systemctl restart nagios
+
+    - name: Check the status of the Nagios service
+      command: systemctl status nagios
+      register: nagios_status
+
+    - name: Display Nagios status
+      debug:
+        msg: "{{ nagios_status.stdout }}"

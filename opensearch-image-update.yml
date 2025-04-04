@@ -1,0 +1,19 @@
+---
+- name: Deploy, execute, and clean up script
+  hosts: feature
+  become: yes
+  become_user: root
+  tasks:
+    - name: Copy the script to target servers
+      copy:
+        src: /home/GRAZITTI/love.pathak/Downloads/ansible/opensearch-image-update.sh
+        dest: /tmp/opensearch-image-update.sh
+        mode: '0755'
+
+    - name: Execute the script
+      command: /tmp/opensearch-image-update.sh
+
+    - name: Remove the script after execution
+      file:
+        path: /tmp/opensearch-image-update.sh
+        state: absent

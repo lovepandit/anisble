@@ -1,0 +1,44 @@
+---
+- name: Configure SSH on host servers
+  become: true
+  hosts: feature
+  tasks:
+    # Step 1: Copy the `ca.pub` file from Ansible server to the target server
+#    - name: Copy ca.pub to /etc/ssh/ca.pub on target servers
+#      copy:
+#        src: /tmp/ca.pub
+#        dest: /etc/ssh/ca.pub
+#        owner: root
+#        group: root
+#        mode: '0644'
+
+    # Step 2: Check if required lines exist in sshd_config
+#    - name: Ensure TrustedUserCAKeys is set in sshd_config
+#      lineinfile:
+#        path: /etc/ssh/sshd_config
+#        regexp: '^TrustedUserCAKeys'
+#        line: 'TrustedUserCAKeys /etc/ssh/ca.pub'
+#        state: present
+
+    - name: Ensure Match User block is set in sshd_config
+      blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+        block: |
+          Match User ansible Address 44.240.161.169,167.99.108.183,10.0.0.0/16
+          PasswordAuthentication yes
+
+    # Step 3: Restart SSH service to apply changes
+ #   - name: Restart SSH service
+ #     service:
+ #       name: sshd
+ #       state: restarted
+
+    # Step 4: Check the status of SSH service
+#    - name: Check SSH service status
+#      shell: systemctl status sshd
+#      register: sshd_status
+#      failed_when: "'active (running)' not in sshd_status.stdout"
+#      changed_when: false
+#    - debug:
+#        var: sshd_status.stdout

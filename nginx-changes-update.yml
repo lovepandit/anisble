@@ -1,0 +1,52 @@
+---
+- name: Deploy and Validate Nginx Configuration
+  hosts: feature
+  become: true
+  tasks:
+
+    # Step 1: Backup the existing Nginx file
+    - name: Backup current Nginx file
+      command: cp -v /etc/nginx/sites-available/default /etc/nginx/sites-available/default_{{ ansible_date_time.epoch }}
+
+    # Step 2: Copy new Nginx file from Ansible server to the target server
+    - name: Deploy new Nginx configuration
+      copy:
+        src: /tmp/default
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: '0644'
+
+    # Step 3: Validate Nginx file
+    - name: Test Nginx configuration syntax
+      shell: nginx -t
+      register: nginx_test
+      ignore_errors: true
+
+    # Step 4: If validation fails, restore backup
+    - name: Restore backup if validation fails
+      command: cp /etc/nginx/sites-available/default_{{ ansible_date_time.epoch }} /etc/nginx/sites-available/default
+      when: nginx_test.rc != 0
+
+    # Step 5: If second validation fails after restore, exit with a message
+    - name: Exit without restarting nginx after test-failed
+      fail:
+        msg: "Nginx configuration is incorrect, no changes applied."
+      when: nginx_test.rc != 0
+
+ #   # Step 6: Restart Nginx service if configuration is valid
+ #   - name: Restart Nginx service
+ #     service:
+ #       name: nginx
+ #       state: restarted
+ #     when: nginx_test.rc == 0
+
+    # Step 7: Check Nginx service status
+    - name: Verify Nginx service is running
+      shell: systemctl status nginx
+      register: nginx_status
+      failed_when: "'active (running)' not in nginx_status.stdout"
+      changed_when: false
+
+    - debug:
+        var: nginx_status.stdout

@@ -1,0 +1,32 @@
+- name: Update filebeat.yml on multiple servers
+  hosts: feature
+  become: yes
+  tasks:
+    - name: Copy filebeat.yml to /tmp
+      copy:
+        src: /home/GRAZITTI/love.pathak/Downloads/ansible/filebeat.yml
+        dest: /tmp/filebeat.yml
+        mode: '0644'
+
+    - name: Create timestamp variable
+      command: date +%Y%m%d%H%M%S
+      register: timestamp
+      changed_when: false
+
+    - name: Check if filebeat.yml exists
+      stat:
+        path: /etc/filebeat/filebeat.yml
+      register: filebeat_file
+
+    - name: Rename existing filebeat.yml with timestamp
+      command: mv /etc/filebeat/filebeat.yml /etc/filebeat/filebeat.yml_{{ timestamp.stdout }}
+      when: filebeat_file.stat.exists
+
+    - name: Move new filebeat.yml to /etc/filebeat/
+      command: mv /tmp/filebeat.yml /etc/filebeat/filebeat.yml
+
+    - name: Restart filebeat service
+      systemd:
+        name: filebeat
+        state: restarted
+
